@@ -1,0 +1,1007 @@
+/********************************************************************************/
+/*********************** 23.03.2020                     *************************/
+/***********************                                *************************/
+
+gibt es einen aktuelleren Code, der in "head.s"
+
+debugging GDTR schwierig (Clement Rouault "Hell of kernel Debugging")
+
+
+
+/*********************** erfolgreicher build linux 0.01 *************************/
+/*********************** 16.03.2020                     *************************/
+/***********************                                *************************/
+/** ausgefuehrte patches                                                        */
+/** Ausgangsbasis ist der src-tree "linux-0.01-rm-3.5.tgz"                      */
+/** 1. static inline statt extern inline                                        */
+/** 2. Makefile -m32 + --32 bei AS                                              */
+/** 3. console.c columns, attr von static unsigned long -> unsigned long        */
+/** 4. file_dev.c: kompletter Funktions-Inhalt von "file_read()" auskommentiert */
+/** 5. sudo apt install bin86      um "as86" zu haben                           */
+
+/** build log                                                                   */
+
+jw@eh3:~/linux$ make
+as --32 --32 -o boot/head.o boot/head.s
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -fno-stack-protector -fno-builtin -g -m32  \
+-nostdinc -Iinclude -c -o init/main.o init/main.c
+(cd kernel; make)
+make[1]: Entering directory '/home/jw/linux/kernel'
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -finline-functions -fno-stack-protector -nostdinc -I../include \
+-c -o sched.o sched.c
+as --32 -o system_call.o system_call.s
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -finline-functions -fno-stack-protector -nostdinc -I../include \
+-c -o traps.o traps.c
+In file included from traps.c:7:0:
+../include/string.h:405:22: warning: conflicting types for built-in function ‘memchr’ [-Wbuiltin-declaration-mismatch]
+ static inline void * memchr(const void * cs,char c,int count)
+                      ^~~~~~
+as --32 -o asm.o asm.s
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -finline-functions -fno-stack-protector -nostdinc -I../include \
+-c -o fork.o fork.c
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -finline-functions -fno-stack-protector -nostdinc -I../include \
+-c -o panic.o panic.c
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -finline-functions -fno-stack-protector -nostdinc -I../include \
+-c -o printk.o printk.c
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -finline-functions -fno-stack-protector -nostdinc -I../include \
+-c -o vsprintf.o vsprintf.c
+In file included from vsprintf.c:7:0:
+../include/string.h:405:22: warning: conflicting types for built-in function ‘memchr’ [-Wbuiltin-declaration-mismatch]
+ static inline void * memchr(const void * cs,char c,int count)
+                      ^~~~~~
+vsprintf.c: In function ‘vsprintf’:
+vsprintf.c:101:6: warning: variable ‘qualifier’ set but not used [-Wunused-but-set-variable]
+  int qualifier;  /* 'h', 'l', or 'L' for integer fields */
+      ^~~~~~~~~
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -finline-functions -fno-stack-protector -nostdinc -I../include \
+-c -o tty_io.o tty_io.c
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -finline-functions -fno-stack-protector -nostdinc -I../include \
+-c -o console.o console.c
+as --32 -o keyboard.o keyboard.s
+as --32 -o rs_io.o rs_io.s
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -finline-functions -fno-stack-protector -nostdinc -I../include \
+-c -o hd.o hd.c
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -finline-functions -fno-stack-protector -nostdinc -I../include \
+-c -o sys.o sys.c
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -finline-functions -fno-stack-protector -nostdinc -I../include \
+-c -o exit.o exit.c
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -finline-functions -fno-stack-protector -nostdinc -I../include \
+-c -o serial.o serial.c
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -finline-functions -fno-stack-protector -nostdinc -I../include \
+-c -o mktime.o mktime.c
+ld -m elf_i386 -r -o kernel.o sched.o system_call.o traps.o asm.o fork.o panic.o printk.o vsprintf.o tty_io.o console.o keyboard.o rs_io.o hd.o sys.o exit.o serial.o mktime.o
+sync
+make[1]: Leaving directory '/home/jw/linux/kernel'
+(cd mm; make)
+make[1]: Entering directory '/home/jw/linux/mm'
+gcc -O -Wall -fstrength-reduce  -fomit-frame-pointer -m32 -fno-stack-protector -finline-functions -nostdinc -I../include \
+-c -o memory.o memory.c
+as --32 -o page.o page.s
+ld -m elf_i386 -r -o mm.o memory.o page.o
+make[1]: Leaving directory '/home/jw/linux/mm'
+(cd fs; make)
+make[1]: Entering directory '/home/jw/linux/fs'
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -fno-stack-protector -nostdinc -I../include \
+-c -o open.o open.c
+In file included from open.c:1:0:
+../include/string.h:405:22: warning: conflicting types for built-in function ‘memchr’ [-Wbuiltin-declaration-mismatch]
+ static inline void * memchr(const void * cs,char c,int count)
+                      ^~~~~~
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -fno-stack-protector -nostdinc -I../include \
+-c -o read_write.o read_write.c
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -fno-stack-protector -nostdinc -I../include \
+-c -o inode.o inode.c
+In file included from inode.c:1:0:
+../include/string.h:405:22: warning: conflicting types for built-in function ‘memchr’ [-Wbuiltin-declaration-mismatch]
+ static inline void * memchr(const void * cs,char c,int count)
+                      ^~~~~~
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -fno-stack-protector -nostdinc -I../include \
+-c -o file_table.o file_table.c
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -fno-stack-protector -nostdinc -I../include \
+-c -o buffer.o buffer.c
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -fno-stack-protector -nostdinc -I../include \
+-c -o super.o super.c
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -fno-stack-protector -nostdinc -I../include \
+-c -o block_dev.o block_dev.c
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -fno-stack-protector -nostdinc -I../include \
+-c -o char_dev.o char_dev.c
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -fno-stack-protector -nostdinc -I../include \
+-c -o file_dev.o file_dev.c
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -fno-stack-protector -nostdinc -I../include \
+-c -o stat.o stat.c
+stat.c: In function ‘sys_lstat64’:
+stat.c:105:29: warning: passing argument 2 of ‘sys_stat64’ from incompatible pointer type [-Wincompatible-pointer-types]
+  return sys_stat64(filename,statbuf);
+                             ^~~~~~~
+stat.c:81:5: note: expected ‘struct stat64 *’ but argument is of type ‘struct stat *’
+ int sys_stat64(char * filename, struct stat64 * statbuf)
+     ^~~~~~~~~~
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -fno-stack-protector -nostdinc -I../include \
+-c -o exec.o exec.c
+In file included from exec.c:53:0:
+../include/string.h:405:22: warning: conflicting types for built-in function ‘memchr’ [-Wbuiltin-declaration-mismatch]
+ static inline void * memchr(const void * cs,char c,int count)
+                      ^~~~~~
+exec.c:298:3: warning: ‘put_fs_byte’ is static but used in inline function ‘create_bss_section’ which is not static
+   put_fs_byte(0,(char *)dest++);
+   ^~~~~~~~~~~
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -fno-stack-protector -nostdinc -I../include \
+-c -o pipe.o pipe.c
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -fno-stack-protector -nostdinc -I../include \
+-c -o namei.o namei.c
+In file included from namei.c:5:0:
+../include/string.h:405:22: warning: conflicting types for built-in function ‘memchr’ [-Wbuiltin-declaration-mismatch]
+ static inline void * memchr(const void * cs,char c,int count)
+                      ^~~~~~
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -fno-stack-protector -nostdinc -I../include \
+-c -o bitmap.o bitmap.c
+In file included from bitmap.c:2:0:
+../include/string.h:405:22: warning: conflicting types for built-in function ‘memchr’ [-Wbuiltin-declaration-mismatch]
+ static inline void * memchr(const void * cs,char c,int count)
+                      ^~~~~~
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -fno-stack-protector -nostdinc -I../include \
+-c -o fcntl.o fcntl.c
+In file included from fcntl.c:1:0:
+../include/string.h:405:22: warning: conflicting types for built-in function ‘memchr’ [-Wbuiltin-declaration-mismatch]
+ static inline void * memchr(const void * cs,char c,int count)
+                      ^~~~~~
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -fno-stack-protector -nostdinc -I../include \
+-c -o ioctl.o ioctl.c
+In file included from ioctl.c:1:0:
+../include/string.h:405:22: warning: conflicting types for built-in function ‘memchr’ [-Wbuiltin-declaration-mismatch]
+ static inline void * memchr(const void * cs,char c,int count)
+                      ^~~~~~
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -fno-stack-protector -nostdinc -I../include \
+-c -o tty_ioctl.o tty_ioctl.c
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -fno-stack-protector -nostdinc -I../include \
+-c -o truncate.o truncate.c
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -fno-stack-protector -nostdinc -I../include \
+-c -o sys_getdents.o sys_getdents.c
+sys_getdents.c: In function ‘minix_getdents’:
+sys_getdents.c:44:28: warning: pointer targets in passing argument 2 of ‘put_fs_long’ differ in signedness [-Wpointer-sign]
+      put_fs_long(de->inode,&dirent->d_ino);
+                            ^
+In file included from sys_getdents.c:8:0:
+../include/asm/segment.h:35:20: note: expected ‘long unsigned int *’ but argument is of type ‘long int *’
+ static inline void put_fs_long(unsigned long val,unsigned long * addr)
+                    ^~~~~~~~~~~
+sys_getdents.c:46:20: warning: pointer targets in passing argument 2 of ‘put_fs_word’ differ in signedness [-Wpointer-sign]
+      put_fs_word(i,&dirent->d_reclen);
+                    ^
+In file included from sys_getdents.c:8:0:
+../include/asm/segment.h:30:20: note: expected ‘short int *’ but argument is of type ‘short unsigned int *’
+ static inline void put_fs_word(short val,short * addr)
+                    ^~~~~~~~~~~
+sys_getdents.c: In function ‘minix_getdents64’:
+sys_getdents.c:88:28: warning: passing argument 2 of ‘put_fs_long’ from incompatible pointer type [-Wincompatible-pointer-types]
+      put_fs_long(de->inode,&dirent->d_ino);
+                            ^
+In file included from sys_getdents.c:8:0:
+../include/asm/segment.h:35:20: note: expected ‘long unsigned int *’ but argument is of type ‘uint64_t * {aka long long unsigned int *}’
+ static inline void put_fs_long(unsigned long val,unsigned long * addr)
+                    ^~~~~~~~~~~
+sys_getdents.c:90:20: warning: pointer targets in passing argument 2 of ‘put_fs_word’ differ in signedness [-Wpointer-sign]
+      put_fs_word(i,&dirent->d_reclen);
+                    ^
+In file included from sys_getdents.c:8:0:
+../include/asm/segment.h:30:20: note: expected ‘short int *’ but argument is of type ‘uint16_t * {aka short unsigned int *}’
+ static inline void put_fs_word(short val,short * addr)
+                    ^~~~~~~~~~~
+ld -m elf_i386 -r -o fs.o open.o read_write.o inode.o file_table.o buffer.o super.o block_dev.o char_dev.o file_dev.o stat.o exec.o pipe.o namei.o bitmap.o fcntl.o ioctl.o tty_ioctl.o truncate.o sys_getdents.o
+make[1]: Leaving directory '/home/jw/linux/fs'
+(cd lib; make)
+make[1]: Entering directory '/home/jw/linux/lib'
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -finline-functions -fno-stack-protector -nostdinc -I../include \
+-c -o ctype.o ctype.c
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -finline-functions -fno-stack-protector -nostdinc -I../include \
+-c -o _exit.o _exit.c
+_exit.c: In function ‘_exit’:
+_exit.c:7:1: warning: ‘noreturn’ function does return
+ }
+ ^
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -finline-functions -fno-stack-protector -nostdinc -I../include \
+-c -o open.o open.c
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -finline-functions -fno-stack-protector -nostdinc -I../include \
+-c -o close.o close.c
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -finline-functions -fno-stack-protector -nostdinc -I../include \
+-c -o errno.o errno.c
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -finline-functions -fno-stack-protector -nostdinc -I../include \
+-c -o write.o write.c
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -finline-functions -fno-stack-protector -nostdinc -I../include \
+-c -o dup.o dup.c
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -finline-functions -fno-stack-protector -nostdinc -I../include \
+-c -o setsid.o setsid.c
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -finline-functions -fno-stack-protector -nostdinc -I../include \
+-c -o execve.o execve.c
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -finline-functions -fno-stack-protector -nostdinc -I../include \
+-c -o wait.o wait.c
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -m32 -finline-functions -fno-stack-protector -nostdinc -I../include \
+-c -o string.o string.c
+In file included from string.c:8:0:
+../include/string.h:405:22: warning: conflicting types for built-in function ‘memchr’ [-Wbuiltin-declaration-mismatch]
+ static inline void * memchr(const void * cs,char c,int count)
+                      ^~~~~~
+../include/string.h:423:22: warning: ‘memset’ defined but not used [-Wunused-function]
+ static inline void * memset(void * s,int c,int count)
+                      ^~~~~~
+../include/string.h:405:22: warning: ‘memchr’ defined but not used [-Wunused-function]
+ static inline void * memchr(const void * cs,char c,int count)
+                      ^~~~~~
+../include/string.h:389:19: warning: ‘memcmp’ defined but not used [-Wunused-function]
+ static inline int memcmp(const void * cs,const void * ct,int count)
+                   ^~~~~~
+../include/string.h:368:22: warning: ‘memmove’ defined but not used [-Wunused-function]
+ static inline void * memmove(void * dest,const void * src, int n)
+                      ^~~~~~~
+../include/string.h:297:22: warning: ‘strtok’ defined but not used [-Wunused-function]
+ static inline char * strtok(char * s,const char * ct)
+                      ^~~~~~
+../include/string.h:280:19: warning: ‘strlen’ defined but not used [-Wunused-function]
+ static inline int strlen(const char * s)
+                   ^~~~~~
+../include/string.h:253:22: warning: ‘strstr’ defined but not used [-Wunused-function]
+ static inline char * strstr(const char * cs,const char * ct)
+                      ^~~~~~
+../include/string.h:226:22: warning: ‘strpbrk’ defined but not used [-Wunused-function]
+ static inline char * strpbrk(const char * cs,const char * ct)
+                      ^~~~~~~
+../include/string.h:202:19: warning: ‘strcspn’ defined but not used [-Wunused-function]
+ static inline int strcspn(const char * cs, const char * ct)
+                   ^~~~~~~
+../include/string.h:178:19: warning: ‘strspn’ defined but not used [-Wunused-function]
+ static inline int strspn(const char * cs, const char * ct)
+                   ^~~~~~
+../include/string.h:160:22: warning: ‘strrchr’ defined but not used [-Wunused-function]
+ static inline char * strrchr(const char * s,int c)
+                      ^~~~~~~
+../include/string.h:140:22: warning: ‘strchr’ defined but not used [-Wunused-function]
+ static inline char * strchr(const char * s,int c)
+                      ^~~~~~
+../include/string.h:117:19: warning: ‘strncmp’ defined but not used [-Wunused-function]
+ static inline int strncmp(const char * cs,const char * ct,int count)
+                   ^~~~~~~
+../include/string.h:96:19: warning: ‘strcmp’ defined but not used [-Wunused-function]
+ static inline int strcmp(const char * cs,const char * ct)
+                   ^~~~~~
+../include/string.h:74:22: warning: ‘strncat’ defined but not used [-Wunused-function]
+ static inline char * strncat(char * dest,const char * src,int count)
+                      ^~~~~~~
+../include/string.h:58:22: warning: ‘strcat’ defined but not used [-Wunused-function]
+ static inline char * strcat(char * dest,const char * src)
+                      ^~~~~~
+../include/string.h:40:22: warning: ‘strncpy’ defined but not used [-Wunused-function]
+ static inline char * strncpy(char * dest,const char *src,int count)
+                      ^~~~~~~
+../include/string.h:27:22: warning: ‘strcpy’ defined but not used [-Wunused-function]
+ static inline char * strcpy(char * dest,const char *src)
+                      ^~~~~~
+ar rcs lib.a ctype.o _exit.o open.o close.o errno.o write.o dup.o setsid.o execve.o wait.o string.o
+sync
+make[1]: Leaving directory '/home/jw/linux/lib'
+ld -m elf_i386 -M -Ttext 0 -e startup_32 boot/head.o init/main.o \
+kernel/kernel.o mm/mm.o fs/fs.o \
+lib/lib.a \
+-o tools/system > System.map
+(echo -n "SYSSIZE = (";stat -c%s tools/system \
+	| tr '\012' ' '; echo "+ 15 ) / 16") > tmp.s	
+cat boot/boot.s >> tmp.s
+as86 -0  -o boot/boot.o tmp.s
+00286                                           /*
+00287                                            * This procedure turns off the floppy drive motor, so
+00288                                            * that we enter the kernel in a known state, and
+00289                                            * don't have to worry about it later.
+00290                                            */
+00286                                           /*
+00287                                            * This procedure turns off the floppy drive motor, so
+00288                                            * that we enter the kernel in a known state, and
+00289                                            * don't have to worry about it later.
+00290                                            */
+rm -f tmp.s
+ld86 -0 -s -o boot/boot boot/boot.o
+gcc -Wall -O -fstrength-reduce -fomit-frame-pointer -fno-stack-protector -fno-builtin -g -m32  \
+-o tools/build tools/build.c
+tools/build.c: In function ‘main’:
+tools/build.c:71:2: warning: ignoring return value of ‘write’, declared with attribute warn_unused_result [-Wunused-result]
+  write(1,buf,512);
+  ^~~~~~~~~~~~~~~~
+#chmem +65000 tools/build
+objcopy  -O binary -R .note -R .comment tools/system tools/system.bin
+tools/build boot/boot tools/system.bin > Image
+Boot sector 452 bytes.
+System 106113 bytes.
+
+/*********************** erfolgreicher build linux 0.01 *************************/
+/*********************** was wurde gebaut ?             *************************/
+/***********************                                *************************/
+/** 1. System.map                                                               */
+/** 2. Image                                                                    */
+/** 3.         */
+/** 4.  */
+/** 5.                            */
+
+
+
+
+
+/*********************** Linux-0.01 (September 17, 1991) ************************/
+/***   This is the initial 0.01 kernel as found on various history sites.  ******/
+/***********************                                *************************/
+
+Fun facts:
+
+ - kernel/Makefile still calls it the FREAX kernel
+
+ - this was in a more innocent age, when the only copyright notice
+   is a single "(C) 1991 Linus Torvalds" in lib/string.h
+
+ - the keyboard driver was still in all assembly language, with a
+   hardcoded map for (7-bit) Finnish keyboards. At least I had converted
+   the VT100 emulation from assembly to C. Too bad I didn't keep the
+   _really_ old code around for historical interest.
+
+ - All the early kernels wanted a special version of gcc to compile: I
+   had made extensions to gcc-1.40 to make it use the x86 string
+   instructions for things like "memcpy()" using the "-mstring-insns"
+   command line option.
+
+ - Also, note that newer versions of gcc (which do have the inline
+   intrisics, quite independently of my early -mstring-insns hack) will
+   not accept the code: it needs a compiler that outputs old-style a.out
+   format, and that accepts some of the strange inline assembly that I
+   used.
+
+ - In short: you really need some stone-age tools to actually compile
+   this, if you actually want to.  And if you actually want to _run_ it
+   too, you need to have some old hardware and most likely edit some of
+   the hardcoded numbers too.  The harddisk driver has two different
+   hardcoded settings: my harddisk, and Lasu's harddisk.
+
+Statistics:
+
+It's 88 files with about ten thousand lines, written by yours truly
+except for the vsprintf routine which was co-written with Lars
+Wirzenius.  Lasu wasn't as huge a fan of inline assembly as I was, thus
+the comment
+
+        "Wirzenius wrote this portably, Torvalds fucked it up :-)"
+
+I think that comment pretty much sums it up ;)
+
+
+
+
+
+
+
+
+
+
+
+
+ORIGINAL RELEASE NOTES FOR 0.01 follow:
+
+         Notes for linux release 0.01
+
+         0. Contents of this directory
+
+linux-0.01.tar.Z - sources to the kernel
+bash.Z - compressed bash binary if you want to test it
+update.Z - compressed update binary
+RELNOTES-0.01 - this file
+
+         1. Short intro
+
+This is a free minix-like kernel for i386(+) based AT-machines.  Full
+source is included, and this source has been used to produce a running
+kernel on two different machines.  Currently there are no kernel
+binaries for public viewing, as they have to be recompiled for different
+machines.  You need to compile it with gcc (I use 1.40, don't know if
+1.37.1 will handle all __asm__-directives), after having changed the
+relevant configuration file(s).
+
+As the version number (0.01) suggests this is not a mature product.
+Currently only a subset of AT-hardware is supported (hard-disk, screen,
+keyboard and serial lines), and some of the system calls are not yet
+fully implemented (notably mount/umount aren't even implemented).  See
+comments or readme's in the code.
+
+This version is also meant mostly for reading - ie if you are interested
+in how the system looks like currently.  It will compile and produce a
+working kernel, and though I will help in any way I can to get it
+working on your machine (mail me), it isn't really supported.  Changes
+are frequent, and the first "production" version will probably differ
+wildly from this pre-alpha-release.
+
+Hardware needed for running linux:
+        - 386 AT
+        - VGA/EGA screen
+        - AT-type harddisk controller (IDE is fine)
+        - Finnish keyboard (oh, you can use a US keyboard, but not
+          without some practise :-)
+
+The Finnish keyboard is hard-wired, and as I don't have a US one I
+cannot change it without major problems. See kernel/keyboard.s for
+details. If anybody is willing to make an even partial port, I'd be
+grateful. Shouldn't be too hard, as it's tabledriven (it's assembler
+though, so ...)
+
+Although linux is a complete kernel, and uses no code from minix or
+other sources, almost none of the support routines have yet been coded.
+Thus you currently need minix to bootstrap the system. It might be
+possible to use the free minix demo-disk to make a filesystem and run
+linux without having minix, but I don't know...
+
+         2. Copyrights etc
+
+This kernel is (C) 1991 Linus Torvalds, but all or part of it may be
+redistributed provided you do the following:
+
+        - Full source must be available (and free), if not with the
+          distribution then at least on asking for it.
+
+        - Copyright notices must be intact. (In fact, if you distribute
+          only parts of it you may have to add copyrights, as there aren't
+          (C)'s in all files.) Small partial excerpts may be copied
+          without bothering with copyrights.
+
+        - You may not distibute this for a fee, not even "handling"
+          costs.
+
+Mail me at "torvalds@kruuna.helsinki.fi" if you have any questions.
+
+Sadly, a kernel by itself gets you nowhere. To get a working system you
+need a shell, compilers, a library etc. These are separate parts and may
+be under a stricter (or even looser) copyright. Most of the tools used
+with linux are GNU software and are under the GNU copyleft. These tools
+aren't in the distribution - ask me (or GNU) for more info.
+
+         3. Short technical overview of the kernel.
+
+The linux kernel has been made under minix, and it was my original idea
+to make it binary compatible with minix. That was dropped, as the
+differences got bigger, but the system still resembles minix a great
+deal. Some of the key points are:
+
+        - Efficient use of the possibilities offered by the 386 chip.
+          Minix was written on a 8088, and later ported to other
+          machines - linux takes full advantage of the 386 (which is
+          nice if you /have/ a 386, but makes porting very difficult)
+
+        - No message passing, this is a more traditional approach to
+          unix. System calls are just that - calls. This might or might
+          not be faster, but it does mean we can dispense with some of
+          the problems with messages (message queues etc). Of course, we
+          also miss the nice features :-p.
+
+        - Multithreaded FS - a direct consequence of not using messages.
+          This makes the filesystem a bit (a lot) more complicated, but
+          much nicer. Coupled with a better scheduler, this means that
+          you can actually run several processes concurrently without
+          the performance hit induced by minix.
+
+        - Minimal task switching. This too is a consequence of not using
+          messages. We task switch only when we really want to switch
+          tasks - unlike minix which task-switches whatever you do. This
+          means we can more easily implement 387 support (indeed this is
+          already mostly implemented)
+
+        - Interrupts aren't hidden. Some people (among them Tanenbaum)
+          think interrupts are ugly and should be hidden. Not so IMHO.
+          Due to practical reasons interrupts must be mainly handled by
+          machine code, which is a pity, but they are a part of the code
+          like everything else. Especially device drivers are mostly
+          interrupt routines - see kernel/hd.c etc.
+
+        - There is no distinction between kernel/fs/mm, and they are all
+          linked into the same heap of code. This has it's good sides as
+          well as bad. The code isn't as modular as the minix code, but
+          on the other hand some things are simpler. The different parts
+          of the kernel are under different sub-directories in the
+          source tree, but when running everything happens in the same
+          data/code space.
+
+The guiding line when implementing linux was: get it working fast. I
+wanted the kernel simple, yet powerful enough to run most unix software.
+The file system I couldn't do much about - it needed to be minix
+compatible for practical reasons, and the minix filesystem was simple
+enough as it was. The kernel and mm could be simplified, though:
+
+        - Just one data structure for tasks. "Real" unices have task
+          information in several places, I wanted everything in one
+          place.
+
+        - A very simple memory management algorithm, using both the
+          paging and segmentation capabilities of the i386. Currently
+          MM is just two files - memory.c and page.s, just a couple of
+          hundreds of lines of code.
+
+These decisions seem to have worked out well - bugs were easy to spot,
+and things work.
+
+         4. The "kernel proper"
+
+All the routines handling tasks are in the subdirectory "kernel". These
+include things like 'fork' and 'exit' as well as scheduling and minor
+system calls like 'getpid' etc. Here are also the handlers for most
+exceptions and traps (not page faults, they are in mm), and all
+low-level device drivers (get_hd_block, tty_write etc). Currently all
+faults lead to a exit with error code 11 (Segmentation fault), and the
+system seems to be relatively stable ("crashme" hasn't - yet).
+
+         5. Memory management
+
+This is the simplest of all parts, and should need only little changes.
+It contains entry-points for some things that the rest of the kernel
+needs, but mostly copes on it's own, handling page faults as they
+happen. Indeed, the rest of the kernel usually doesn't actively allocate
+pages, and just writes into user space, letting mm handle any possible
+'page-not-present' errors.
+
+Memory is dealt with in two completely different ways - by paging and
+segmentation.  First the 386 VM-space (4GB) is divided into a number of
+segments (currently 64 segments of 64Mb each), the first of which is the
+kernel memory segment, with the complete physical memory identity-mapped
+into it.  All kernel functions live within this area.
+
+Tasks are then given one segment each, to use as they wish. The paging
+mechanism sees to filling the segment with the appropriate pages,
+keeping track of any duplicate copies (created at a 'fork'), and making
+copies on any write. The rest of the system doesn't need to know about
+all this.
+
+         6. The file system
+
+As already mentioned, the linux FS is the same as in minix. This makes
+crosscompiling from minix easy, and means you can mount a linux
+partition from minix (or the other way around as soon as I implement
+mount :-). This is only on the logical level though - the actual
+routines are very different.
+
+        NOTE! Minix-1.6.16 seems to have a new FS, with minor
+        modifications to the 1.5.10 I've been using. Linux
+        won't understand the new system.
+
+The main difference is in the fact that minix has a single-threaded
+file-system and linux hasn't. Implementing a single-threaded FS is much
+easier as you don't need to worry about other processes allocating
+buffer blocks etc while you do something else. It also means that you
+lose some of the multiprocessing so important to unix.
+
+There are a number of problems (deadlocks/raceconditions) that the linux
+kernel needed to address due to multi-threading.  One way to inhibit
+race-conditions is to lock everything you need, but as this can lead to
+unnecessary blocking I decided never to lock any data structures (unless
+actually reading or writing to a physical device).  This has the nice
+property that dead-locks cannot happen.
+
+Sadly it has the not so nice property that race-conditions can happen
+almost everywhere.  These are handled by double-checking allocations etc
+(see fs/buffer.c and fs/inode.c).  Not letting the kernel schedule a
+task while it is in supervisor mode (standard unix practise), means that
+all kernel/fs/mm actions are atomic (not counting interrupts, and we are
+careful when writing those) if you don't call 'sleep', so that is one of
+the things we can count on.
+
+         7. Apologies :-)
+
+This isn't yet the "mother of all operating systems", and anyone who
+hoped for that will have to wait for the first real release (1.0), and
+even then you might not want to change from minix.  This is a source
+release for those that are interested in seeing what linux looks like,
+and it's not really supported yet.  Anyone with questions or suggestions
+(even bug-reports if you decide to get it working on your system) is
+encouraged to mail me.
+
+         8. Getting it working
+
+Most hardware dependancies will have to be compiled into the system, and
+there a number of defines in the file "include/linux/config.h" that you
+have to change to get a personalized kernel.  Also you must uncomment
+the right "equ" in the file boot/boot.s, telling the bootup-routine what
+kind of device your A-floppy is.  After that a simple "make" should make
+the file "Image", which you can copy to a floppy (cp Image /dev/PS0 is
+what I use with a 1.44Mb floppy).  That's it.
+
+Without any programs to run, though, the kernel cannot do anything. You
+should find binaries for 'update' and 'bash' at the same place you found
+this, which will have to be put into the '/bin' directory on the
+specified root-device (specified in config.h). Bash must be found under
+the name '/bin/sh', as that's what the kernel currently executes. Happy
+hacking.
+
+         Linus Torvalds "torvalds@kruuna.helsinki.fi"
+         Petersgatan 2 A 2
+         00140 Helsingfors 14
+         FINLAND
+
+/********************************************************************************/
+/*********************** 14.04.2020                     *************************/
+/*********************** linux-0.00 complete notes      *************************/
+/********************************************************************************/
+
+# This code has been transferred to memory 0x10000 by boot.s, and in protected mode
+KRN_BASE = 0x10000
+# In boot.s we have learned the structure of the segment register, which is an index pointing to the gdt table
+# One of the gdt table The table entry occupies 8 bytes. Each user process occupies two gdt table entries, tss and ldt
+# The first item is not
+# The second item is the system code segment
+# The third item is the system data segment
+# The third item is the system's video memory segment
+# Then the fourth The entry is from the 32nd (0x20) byte, and so on.
+TSS0_SEL = 0x20
+LDT0_SEL = 0x28
+TSS1_SEL =
+0X30 LDT1_SEL = 0x38
+.text
+startup_32:
+# Point all the segment registers to the system data segment, the third item of the gdt table
+    movl $ 0x10 ,% eax
+    mov% ax,% ds
+    mov% ax,% es
+    mov% ax,% fs
+    mov% ax,% gs
+# load stack segment address
+    lss stack_ptr,% esp
+#
+# linux-0.00 has two processes, one of them Always print A, the other always prints B
+# Until 8253 production interrupt switching process
+# The operating system adopts a segmentation mechanism before adopting the paging mechanism. Segments in modern operating systems
+# Some people say that Linux is cleverly bypassed, some people say it is not needed ...
+#
+# For a system that uses a segmentation mechanism, each user process occupies two items in the gdt table, one is the tss segment, in addition One is the ldt segment
+# The following dozen lines of code set the tss segment and ldt segment of the two processes
+# Write the absolute addresses of these two segments to the corresponding place of the
+gdt entry # For the structure of the gdt entry, please refer to the C program
+#
+http :     //blog.chinaunix.net/u/23177/showart_209429.html
+#
+movl $ KRN_BASE,% ebx
+    movl $ gdt,% ecx
+    lea tss0,% eax
+    movl $ TSS0_SEL,% edi   
+    call set_base
+    lea ldt0,% eax
+    movl $ LDT0_SEL ,% edi
+    call set_base
+    lea tss1,% eax
+    movl $ TSS1_SEL,% edi
+    call set_base
+    lea ldt1,% eax
+    movl $ LDT1_SEL,% edi
+    call set_base
+# setup_idt sets the processing functions of 256 interrupt vectors to ignore_int
+    call setup_idt
+# loads the length and starting address of the global descriptor table into register gdtr
+    call setup_gdt
+    movl $ 0x10,% eax # reload all the segment registers
+    mov% ax,% ds # after changing gdt.
+    mov% ax,% es
+    mov% ax,% fs
+    mov% ax,% gs
+    lss stack_ptr,% esp
+# setup up timer 8253 chip.
+    movb $ 0x36,% al
+    movl $ 0x43 ,% edx
+    outb% al,% dx
+    movl $ 11930,% eax # timer frequency 100 HZ
+    movl $ 0x40,% edx
+    outb% al,% dx
+    movb% ah,% al
+    outb% al,% dx
+#
+# The operating system has three interrupts , Software interrupt, hardware interrupt and processor exception
+# timer_interrupt is a hardware interrupt handler, telling the system that the time is up, and switching process
+# system_interrupt is a software interrupt handler, user processes can use the system call to print letters A or B
+#
+# IDT (interrupt descriptor table) in real mode is in The place in memory starting from address 0x0
+# In protected mode, there is a register idtr specifically pointing to the place where IDT starts
+# Therefore, IDT does not have to be placed at the beginning of address 0x0
+# In real mode, an interrupt vector occupies 4 bytes, 256 items in total 1k byte
+# in protected mode interrupt descriptor is 8 bytes, a total of 256 2k bytes
+#
+# interrupt the protected mode descriptor is interrupt gate, trap gate or task gate. Some books say that there is also a call gate
+# The only difference between an interrupt gate and a trap gate is that the interrupt gate does not allow further interruption, which means that the interrupt gate
+# program is executed when the interrupt handler is executed . Interrupt gates are used to handle hardware interrupts.
+# Trap gates instead, allow interrupts and handle software interrupts. This is reflected in the following code
+# Task Gate provides a hardware level support for switching processes. Now Linux kernel does not use this mechanism
+# Linux only uses TSS structure of I / O ports using a bitmap pointers and Zhan
+# linux-0.00 but did use this hardware switching mechanism
+#
+# Set the interrupt handler is located The segment is the system code segment, that is, the second item of the gdt table
+# and the offset 16 of the interrupt handler in the segment is 0
+    movl $ 0x00080000,% eax   
+# Set the lower 16 bits of the interrupt handler offset in the segment
+    movw $ timer_interrupt,% ax
+# Kernel state interrupt gate, and the gate is valid
+    movw $ 0x8E00,% dx
+# timer_interrupt is the 32th interrupt vector
+    movl $ 0x20,% ecx
+    lea idt (,% ecx, 8),% esi
+# Write the content of the set interrupt gate to the corresponding entry of idt (32)
+    movl% eax, (% esi)
+    movl% edx, 4 (% esi)
+# Set The lower 16 bits of the interrupt handler offset in the segment
+    movw $ system_interrupt,% ax
+# user mode trap gate, and the gate is valid
+    movw $ 0xef00,% dx
+# system_interrupt is the 128th interrupt vector
+    movl $ 0x80,% ecx
+    lea idt ( ,% ecx, 8),% esi
+# Write the content of the set trap gate to the corresponding entry of idt (128)
+    movl% eax, (% esi)
+    movl% edx, 4 (% esi)
+# unmask the timer interrupt.
+    movl $ 0x21,% edx
+    inb% dx,% al
+    andb $ 0xfe,% al
+    outb% al,% dx
+#
+# The following three lines of code set the NT of EFLAGS to 0
+# NT = 0 prepares for the following task switching
+# The 403 lines of code on page 102 of the "Linux Kernel Complete Notes" are as follows ( kernel / sched.c):
+# __asm ​​__ ("pushfl; andl $ 0xffffbfff, (% esp); popfl");
+# The following three lines are the expansion of the above code
+#
+# NT is the abbreviation of nested task, the 15th flag of EFLAGS . No task switching occurs when NT = 0
+# In the following tss0 and tss1 structures, eflags = 0x0200, which is NT = 1, task switching occurs
+#
+# x86 There are four ways to switch tasks
+# 1. ljmp $ task_selector, $ 0
+# 2. lcall $ task_selector, $ 0
+# 3. int 0x80
+# 4. iret
+# The difference between ljmp and lcall is that ljmp can never jump back, and lcall can also jump back
+# int 0x80 must jump to the task door
+# iret must set NT to 1
+# The following timer interrupt processing function timer_interrupt uses ljmp
+# ljmp $ TSS0_SEL, $ 0
+# ljmp $ TSS1_SEL, $ 0
+#
+    pushfl andl
+    $ 0xffffbfff, (% esp)
+    popfl
+# Load process 0 task register
+    movl $ TSS0_SEL,% eax
+    ltr% ax
+# Load process 0 local descriptor table register
+    movl $ LDT0_SEL,% eax
+    lldt% ax
+# settings The current process is 0
+    movl $ 0, current
+# open interrupt. After iret, the two tasks can run alternately.
+    sti
+    pushl $ 0x17
+    pushl $ stack0_ptr
+    pushfl
+    pushl $ 0x0f
+    pushl $ task0
+# No task switching (NT = 0), just jump to task0 and execute in user mode
+# I think it can also be understood as Jump to a special task 0 process
+#
+# Erklaerung siehe http://www.jamesmolloy.co.uk/tutorial_html/10.-User%20Mode.html
+# 10.1. Switching to user mode
+# The x86 is strange in that there is no direct way to switch to user mode. 
+# The only way one can reach user mode is to return from an exception that began in user mode. 
+# The only method of getting there in the first place is to set up the stack as if an exception in user mode had occurred, then executing an exception return instruction (IRET).
+    iret
+/ *************************************** * /
+setup_gdt:
+    lgdt lgdt_opcode
+    ret
+setup_idt:
+    lea ignore_int,% edx
+    movl $ 0x00080000,% eax
+    movw% dx,% ax / * selector = 0x0008 = cs * /
+    movw $ 0x8E00,% dx / * interrupt gate-dpl = 0, present * /
+    lea idt,% edi
+    mov $ 256,% ecx
+rp_sidt :
+    movl% eax, (% edi)
+    movl% edx, 4 (% edi)
+    addl $ 8,% edi
+    dec% ecx
+    jne rp_sidt
+    lidt lidt_opcode
+    ret
+# in:% eax-logic addr;% ebx = base addr;
+#% ecx- table addr;% edi-descriptors offset.
+set_base: addl
+    % ebx,% eax
+    addl% ecx,% edi
+    movw% ax, 2 (% edi)
+    rorl $ 16,% eax
+    movb% al, 4 (% edi)
+    movb% ah, 7 (% edi)
+    rorl $ 16,% eax
+    ret
+write_char:
+    push% gs
+    pushl% ebx
+    pushl% eax
+# load video memory segment
+    mov $ 0x18,% ebx
+    mov% bx,% gs
+# get the position of the last displayed character
+    movl scr_loc,% bx
+# each character bit occupies two Bytes, the first byte is the byte we want to display
+    shl $ 1,% ebx
+# Write the character 'A' or 'B' directly to the video memory
+    movb% al,% gs: (% ebx)
+# a character bit Takes two bytes, the second byte is the attribute byte
+# For example, 0x07 is the normal display, white text on black background; 0x70 is the reverse display, black text on white background
+# When the program sets an attribute, it keeps this Attribute, all subsequent characters have the same attribute
+# Until another operation changes the attribute
+# If you add the following three lines here, you will get the effect of black characters on white background
+# inc% ebx
+# movb $ 0x70,% gs :( % ebx)
+# dec% ebx
+    shr $ 1,% ebx
+    incl% ebx
+# CGA provides two text modes 40x25 and 80x25, if it is 80x25 it means that there can be 2000 characters on one screen
+# Each character occupies 8x8 pixels, the CGA has two resolutions 320x200 and 640x200
+# If the following 2000 is changed to 1000, we will find that only the first half of the screen output
+    cmmpl $ 2000,% ebx
+# If the screen is full , Then restart
+    jb 1f
+# Assign the counter to 0
+    movl $ 0,% ebx
+# Save the current cursor position
+1: movl% ebx, scr_loc   
+    popl% eax
+    popl% ebx
+    pop% gs
+    ret
+/ ********** ************************************* /
+/ * This is the default interrupt "handler":- ) * /
+.align 2
+ignore_int:
+    push% ds
+    pushl% eax
+    movl $ 0x10,% eax
+    mov% ax,% ds
+    movl $ 67,% eax / * print 'C' * /
+    call write_char
+    popl% eax
+    pop% ds
+    iret
+/ * Timer interrupt handler * /
+.align 2
+timer_interrupt:
+    push% ds
+    pushl% edx
+    pushl% ecx
+    pushl% ebx
+    pushl% eax
+    movl $ 0x10,% eax
+    mov% ax,% ds
+    movb $ 0x20,% al
+    outb% al, $ 0x20
+    movl $ 1,% eax
+    cmpl% eax, current
+    je 1f
+    movl% eax, current
+    ljmp $ TSS1_SEL, $ 0
+    jmp 2f
+1: movl $ 0, current
+    ljmp $ TSS0_SEL, $ 0
+2: popl% eax
+    popl% ebx
+    popl% ecx
+    popl% edx
+    pop% ds
+    iret
+/ * system call handler * /
+.align 2
+system_interrupt:
+    push% ds
+    pushl% edx
+    pushl% ecx
+    pushl% ebx
+    pushl% eax
+    movl $ 0x10,% edx
+    mov% dx,% ds
+    call write_char
+    popl% eax
+    popl% ebx
+    popl% ecx
+    popl% edx
+    pop% ds
+    iret
+/ ********************************************* /
+current :. long 0
+scr_loc: .long 0
+.align 2
+.word 0
+lidt_opcode:
+    .word 256 * 8-1 # idt contains 256 entries
+    .long idt + KRN_BASE # This will be rewrite by code.
+.align 2
+.word 0
+lgdt_opcode:
+    .word (end_gdt-gdt) -1 # so does gdt
+    .long gdt + KRN_BASE # This will be rewrite by code.
+    .align 3
+idt: .fill 256,8,0 # idt is uninitialized
+gdt: .quad 0x0000000000000000 / * NULL descriptor * /
+    .quad 0x00c09a01000007ff / * 8Mb 0x08, base = 0x10000 * /
+    .quad 0x00c09201000007ff / * 8Mb 0x10 * /
+# According to the definition of the segment descriptor table entry, you can know that the base address of the segment is 0xb8000 (736K)
+# "Linux kernel complete Notes "book 206 follows line 649
+# vidio_mem_start = 0xB8000
+# display shows the color mode is the starting address of the memory 0xB8000
+    .quad 0x00c0920b80000002 / Screen * 0x18 - * for the display /
+    .quad 0x0000e90100000068 # TSS0 descr 0x20
+    .quad 0x0000e20100000040 # LDT0 descr 0x28
+    .quad 0x0000e90100000068 # TSS1 descr 0x30
+    .quad 0x0000e20100000040 # LDT1 descr
+0x38 end_gdt:
+    .fill 128,4,0
+stack_ptr:
+    .long stack_ptr
+    .word 0x10
+/ ****************** ******************* /
+.align 3
+ldt0: .quad 0x0000000000000000
+    .quad 0x00c0fa01000003ff # 0x0f, base = 0x10000
+    .quad 0x00c0f201000003ff # 0x17
+tss0:
+    .long 0 / * back link * /
+    .long stack0_krn_ptr, 0x10 / * esp0, ss0 * /
+    .long 0, 0 / * esp1, ss1 * /
+    .long 0, 0 / * esp2, ss2 * /
+    .long 0 / * cr3 * /
+    .long task0 / * eip * /
+    .long 0x200 / * eflags * /
+    .long 0, 0, 0, 0 / * eax, ecx, edx, ebx * /
+    .long stack0_ptr, 0, 0, 0 / * esp, ebp, esi, edi * /
+    .long 0x17,0x0f, 0x17,0x17,0x17,0x17 / * es, cs, ss, ds, fs, gs * /
+    .long LDT0_SEL / * ldt * /
+    .long 0x8000000 / * trace bitmap * /
+    .fill 128,4,0
+stack0_krn_ptr:
+    .long 0
+/ ************************************ /
+.align 3
+ldt1: .quad 0x0000000000000000
+    .quad 0x00c0fa01000003ff # 0x0f, base = 0x10000
+    .quad 0x00c0f201000003ff # 0x17
+tss1:
+    .long 0 / * back link * /
+    .long stack1_krn_ptr, 0x10 / * esp0, ss0 * /
+    .long 0, 0 / * esp1, ss1 * /
+    .long 0, 0 / * esp2, ss2 * /
+    .long 0 / * cr3 * /
+    .long task1 / * eip * /
+    .long 0x200 / * eflags * /
+    .long 0, 0, 0, 0 / * eax, ecx, edx, ebx * /
+    .long stack1_ptr, 0, 0, 0 / * esp, ebp, esi, edi * /
+    .long 0x17,0x0f, 0x17,0x17,0x17, 0x17 / * es, cs, ss, ds, fs, gs * /
+    .long LDT1_SEL / * ldt * /
+    .long 0x8000000 / * trace bitmap * /
+    .fill 128,4,0
+stack1_krn_ptr:
+    .long 0
+/ **** ******************************** /
+task0:
+    movl $ 0x17,% eax
+    movw% ax,% ds
+    movl $ 65,% al / * print 'A' * /
+    int $ 0x80
+    movl $ 0xfff,% ecx
+1: loop 1b
+    jmp task0
+    .fill 128,4,0
+stack0_ptr:
+    .long 0
+task1:
+    movl $ 0x17,% eax
+    movw% ax,% ds
+    movl $ 66,% al / * print 'B' * /
+    int $ 0x80
+    movl $ 0xfff,% ecx
+1: loop 1b
+    jmp task1
+    .fill 128,4,0
+stack1_ptr:
+    .long 0
+/ *** end * ** /
